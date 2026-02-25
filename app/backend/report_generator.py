@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import json
 import os
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -52,3 +53,16 @@ async def evaluate_repos(username, repos):
         "overall_score": round(overall, 2),
         "repos": results
     }
+
+REPORT_DIR = "reports"
+
+def save_report(username, result):
+
+    os.makedirs(REPORT_DIR, exist_ok=True)
+
+    path = f"{REPORT_DIR}/{username}.json"
+
+    with open(path, "w") as f:
+        json.dump(result, f, indent=2)
+
+    return path
