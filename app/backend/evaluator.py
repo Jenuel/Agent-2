@@ -16,3 +16,14 @@ def clone_repo(username, repo):
         )
 
     return path
+
+def analyze_structure(path):
+
+    file_count = 0
+
+    for root, dirs, files in os.walk(path):
+        file_count += len(files)
+
+    score = min(file_count / 50, 10)
+
+    return round(score, 2)
