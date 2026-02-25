@@ -27,3 +27,13 @@ def analyze_structure(path):
     score = min(file_count / 50, 10)
 
     return round(score, 2)
+
+def read_readme(path):
+
+    for file in os.listdir(path):
+
+        if file.lower().startswith("readme"):
+            with open(f"{path}/{file}", encoding="utf-8") as f:
+                return f.read()
+
+    return ""
