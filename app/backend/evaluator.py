@@ -1,38 +1,53 @@
-import os
 
-REPO_DIR = "repos"
+async def evaluate_repos(username, repos):
 
-def clone_repo(username, repo):
+    results = []
 
-    path = f"{REPO_DIR}/{username}_{repo['name']}"
+    scores = []
 
-    if not os.path.exists(path):
+    for repo in repos:
 
-        Repo.clone_from(
-            repo["url"],
-            path,
-            depth=1
-        )
+        path = clone_repo(username, repo)
 
-    return path
+        structure = analyze_structure(path)
 
-def analyze_structure(path):
+        git_score = analyze_git(path)
 
-    file_count = 0
+        arch = detect_architecture(path)
 
-    for root, dirs, files in os.walk(path):
-        file_count += len(files)
+        tests = detect_tests(path)
 
-    score = min(file_count / 50, 10)
+        ci = detect_ci(path)
 
-    return round(score, 2)
+        readme = read_readme(path)
 
-def read_readme(path):
+        docs = float(evaluate_readme(readme))
 
-    for file in os.listdir(path):
+        repo_score = (
+            structure +
+            git_score +
+            arch +
+            tests +
+            ci +
+            docs
+        ) / 6
 
-        if file.lower().startswith("readme"):
-            with open(f"{path}/{file}", encoding="utf-8") as f:
-                return f.read()
+        scores.append(repo_score)
 
-    return ""
+        results.append({
+            "repo": repo["name"],
+            "structure": structure,
+            "git": git_score,
+            "architecture": arch,
+            "tests": tests,
+            "ci": ci,
+            "docs": docs,
+            "score": repo_score
+        })
+
+    overall = sum(scores) / len(scores)
+
+    return {
+        "overall_score": round(overall, 2),
+        "repos": results
+    }

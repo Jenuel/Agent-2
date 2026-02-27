@@ -22,38 +22,6 @@ def evaluate_readme(readme):
     score = response.text.strip()
     return score
 
-async def evaluate_repos(username, repos):
-
-    results = []
-
-    total = 0
-
-    for repo in repos:
-
-        path = clone_repo(username, repo)
-
-        structure_score = analyze_structure(path)
-
-        readme = read_readme(path)
-
-        readme_score = evaluate_readme(readme)
-
-        repo_score = (structure_score + float(readme_score)) / 2
-
-        total += repo_score
-
-        results.append({
-            "repo": repo["name"],
-            "score": repo_score
-        })
-
-    overall = total / len(results)
-
-    return {
-        "overall_score": round(overall, 2),
-        "repos": results
-    }
-
 REPORT_DIR = "reports"
 
 def save_report(username, result):
