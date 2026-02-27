@@ -1,3 +1,5 @@
+import os
+
 def detect_architecture(path):
 
     indicators = {

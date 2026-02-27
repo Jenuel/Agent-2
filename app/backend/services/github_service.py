@@ -1,4 +1,8 @@
+import os
 import httpx
+from git import Repo
+
+REPO_DIR = "repos"
 
 async def get_user_repos(username):
 
@@ -28,10 +32,6 @@ async def get_user_repos(username):
     filtered.sort(key=lambda x: x["stars"] + x["size"], reverse=True)
 
     return filtered[:3]
-
-import os
-
-REPO_DIR = "repos"
 
 def clone_repo(username, repo):
 

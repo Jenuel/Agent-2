@@ -1,3 +1,5 @@
+import os
+
 def detect_tests(path):
 
     test_files = 0

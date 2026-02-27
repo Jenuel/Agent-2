@@ -1,3 +1,5 @@
+import os
+
 def detect_ci(path):
 
     ci_path = os.path.join(path, ".github", "workflows")
