@@ -1,9 +1,13 @@
 from fastapi import FastAPI
-from github_service import get_user_repos
-from evaluator import evaluate_repos
-from report_generator import save_report
+from backend.services.github_service import get_user_repos
+from backend.evaluator import evaluate_repos
+from backend.report_generator import save_report
 
 app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"message": "GitHub Repo Evaluator API is running."}
 
 @app.post("/evaluate")
 async def evaluate(github_url: str):
