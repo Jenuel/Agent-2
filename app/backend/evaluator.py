@@ -5,51 +5,100 @@ from backend.agents.test_agent import detect_tests
 from backend.agents.devops_agent import detect_ci
 from backend.report_generator import evaluate_readme, model
 
+from typing import TypedDict, Dict, Any
+from langgraph.graph import StateGraph, START, END
+
+class RepoState(TypedDict, total=False):
+    username: str
+    repo: dict
+    path: str
+    readme: str
+    structure: float
+    git: float
+    architecture: float
+    tests: float
+    ci: float
+    docs: float
+    result: dict
+    repo_score: float
+
+def clone_and_structure_node(state: RepoState) -> Dict[str, Any]:
+    path = clone_repo(state["username"], state["repo"])
+    structure = analyze_structure(path)
+    readme = read_readme(path)
+    return {"path": path, "structure": structure, "readme": readme}
+
+def analyze_git_node(state: RepoState) -> Dict[str, Any]:
+    return {"git": analyze_git(state["path"])}
+
+def detect_arch_node(state: RepoState) -> Dict[str, Any]:
+    return {"architecture": detect_architecture(state["path"])}
+
+def detect_tests_node(state: RepoState) -> Dict[str, Any]:
+    return {"tests": detect_tests(state["path"])}
+
+def detect_ci_node(state: RepoState) -> Dict[str, Any]:
+    return {"ci": detect_ci(state["path"])}
+
+def evaluate_docs_node(state: RepoState) -> Dict[str, Any]:
+    return {"docs": float(evaluate_readme(state.get("readme", "")))}
+
+def compile_score_node(state: RepoState) -> Dict[str, Any]:
+    repo_score = (
+        state.get("structure", 0) +
+        state.get("git", 0) +
+        state.get("architecture", 0) +
+        state.get("tests", 0) +
+        state.get("ci", 0) +
+        state.get("docs", 0)
+    ) / 6
+    
+    result = {
+        "repo": state["repo"]["name"],
+        "structure": state.get("structure", 0),
+        "git": state.get("git", 0),
+        "architecture": state.get("architecture", 0),
+        "tests": state.get("tests", 0),
+        "ci": state.get("ci", 0),
+        "docs": state.get("docs", 0),
+        "score": round(repo_score, 2)
+    }
+    return {"result": result, "repo_score": repo_score}
+
+workflow = StateGraph(RepoState)
+
+workflow.add_node("clone", clone_and_structure_node)
+workflow.add_node("git", analyze_git_node)
+workflow.add_node("arch", detect_arch_node)
+workflow.add_node("test", detect_tests_node)
+workflow.add_node("ci", detect_ci_node)
+workflow.add_node("docs", evaluate_docs_node)
+workflow.add_node("compile", compile_score_node)
+
+workflow.add_edge(START, "clone")
+workflow.add_edge("clone", "git")
+workflow.add_edge("clone", "arch")
+workflow.add_edge("clone", "test")
+workflow.add_edge("clone", "ci")
+workflow.add_edge("clone", "docs")
+
+workflow.add_edge(["git", "arch", "test", "ci", "docs"], "compile")
+workflow.add_edge("compile", END)
+
+repo_eval_app = workflow.compile()
+
 async def evaluate_repos(username, repos):
-
     results = []
-
     scores = []
 
     for repo in repos:
+        initial_state = {"username": username, "repo": repo}
+        
+        # LangGraph runs individual sync agent nodes in its thread executors automatically!
+        final_state = await repo_eval_app.ainvoke(initial_state)
 
-        path = clone_repo(username, repo)
-
-        structure = analyze_structure(path)
-
-        git_score = analyze_git(path)
-
-        arch = detect_architecture(path)
-
-        tests = detect_tests(path)
-
-        ci = detect_ci(path)
-
-        readme = read_readme(path)
-
-        docs = float(evaluate_readme(readme))
-
-        repo_score = (
-            structure +
-            git_score +
-            arch +
-            tests +
-            ci +
-            docs
-        ) / 6
-
-        scores.append(repo_score)
-
-        results.append({
-            "repo": repo["name"],
-            "structure": structure,
-            "git": git_score,
-            "architecture": arch,
-            "tests": tests,
-            "ci": ci,
-            "docs": docs,
-            "score": round(repo_score, 2)
-        })
+        scores.append(final_state["repo_score"])
+        results.append(final_state["result"])
 
     overall = sum(scores) / len(scores) if scores else 0
 
@@ -57,7 +106,6 @@ async def evaluate_repos(username, repos):
         "overall_score": round(overall, 2),
         "repos": results
     }
-
 def generate_recommendation(result):
 
     prompt = f"""
