@@ -1,32 +1,24 @@
 import os
+from .base_agent import Agent
 
-def detect_architecture(path):
-
-    indicators = {
-        "docker": False,
-        "api": False,
-        "database": False,
-        "frontend": False
-    }
-
+def get_file_tree(path: str) -> list[str]:
+    """Returns a list of all files in the given directory path. Good for seeing the repository's structure."""
+    tree = []
     for root, dirs, files in os.walk(path):
-
         for file in files:
+            if ".git" in root or ".venv" in root:
+                continue
+            tree.append(os.path.relpath(os.path.join(root, file), path))
+    return tree
 
-            f = file.lower()
-
-            if "dockerfile" in f:
-                indicators["docker"] = True
-
-            if "requirements.txt" in f or "package.json" in f:
-                indicators["api"] = True
-
-            if "models.py" in f or "schema" in f:
-                indicators["database"] = True
-
-            if "react" in root.lower():
-                indicators["frontend"] = True
-
-    score = sum(indicators.values()) / len(indicators) * 10
-
-    return round(score, 2)
+def detect_architecture(path: str) -> float:
+    agent = Agent(
+        name="Architecture Expert",
+        instructions="You are an expert software architect analyzing code structure. Use the get_file_tree tool to inspect the repository. Evaluate the presence of design patterns, MVC models, microservices, containerization, and modern frameworks. Return ONLY a single float number between 0 to 10. No markdown, no other text.",
+        tools=[get_file_tree]
+    )
+    result = agent.run(f"Evaluate the architecture for the repository cloned at {path}")
+    try:
+        return min(max(float(result.strip()), 0.0), 10.0)
+    except Exception:
+        return 5.0
