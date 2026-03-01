@@ -21,6 +21,9 @@ class RepoState(TypedDict, total=False):
     docs: float
     result: dict
     repo_score: float
+    recommendation: str
+
+
 
 def clone_and_structure_node(state: RepoState) -> Dict[str, Any]:
     path = clone_repo(state["username"], state["repo"])
@@ -28,20 +31,26 @@ def clone_and_structure_node(state: RepoState) -> Dict[str, Any]:
     readme = read_readme(path)
     return {"path": path, "structure": structure, "readme": readme}
 
+
 def analyze_git_node(state: RepoState) -> Dict[str, Any]:
     return {"git": analyze_git(state["path"])}
+
 
 def detect_arch_node(state: RepoState) -> Dict[str, Any]:
     return {"architecture": detect_architecture(state["path"])}
 
+
 def detect_tests_node(state: RepoState) -> Dict[str, Any]:
     return {"tests": detect_tests(state["path"])}
+
 
 def detect_ci_node(state: RepoState) -> Dict[str, Any]:
     return {"ci": detect_ci(state["path"])}
 
+
 def evaluate_docs_node(state: RepoState) -> Dict[str, Any]:
     return {"docs": float(evaluate_readme(state.get("readme", "")))}
+
 
 def compile_score_node(state: RepoState) -> Dict[str, Any]:
     repo_score = (
@@ -65,6 +74,34 @@ def compile_score_node(state: RepoState) -> Dict[str, Any]:
     }
     return {"result": result, "repo_score": repo_score}
 
+
+def generate_recommendation_node(state: RepoState) -> Dict[str, Any]:
+    result = state.get("result", {})
+
+    prompt = f"""
+You are a senior technical recruiter evaluating a software developer's GitHub profile.
+
+The developer's repository scores are:
+- Structure:     {result.get('structure', 'N/A')} / 10
+- Git Quality:   {result.get('git', 'N/A')} / 10
+- Architecture:  {result.get('architecture', 'N/A')} / 10
+- Test Coverage: {result.get('tests', 'N/A')} / 10
+- CI/CD Maturity:{result.get('ci', 'N/A')} / 10
+- Documentation: {result.get('docs', 'N/A')} / 10
+- Overall Score: {result.get('score', 'N/A')} / 10
+
+Repository: {result.get('repo', 'Unknown')}
+
+Should this candidate be hired? Provide a concise recommendation (2–3 sentences) with clear reasoning.
+"""
+
+    response = model.generate_content(prompt)
+    return {"recommendation": response.text.strip()}
+
+
+
+
+
 workflow = StateGraph(RepoState)
 
 workflow.add_node("clone", clone_and_structure_node)
@@ -74,6 +111,7 @@ workflow.add_node("test", detect_tests_node)
 workflow.add_node("ci", detect_ci_node)
 workflow.add_node("docs", evaluate_docs_node)
 workflow.add_node("compile", compile_score_node)
+workflow.add_node("recommend", generate_recommendation_node)
 
 workflow.add_edge(START, "clone")
 workflow.add_edge("clone", "git")
@@ -83,7 +121,8 @@ workflow.add_edge("clone", "ci")
 workflow.add_edge("clone", "docs")
 
 workflow.add_edge(["git", "arch", "test", "ci", "docs"], "compile")
-workflow.add_edge("compile", END)
+workflow.add_edge("compile", "recommend")
+workflow.add_edge("recommend", END)
 
 repo_eval_app = workflow.compile()
 
