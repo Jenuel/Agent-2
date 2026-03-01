@@ -53,25 +53,23 @@ def evaluate_docs_node(state: RepoState) -> Dict[str, Any]:
 
 
 def compile_score_node(state: RepoState) -> Dict[str, Any]:
-    repo_score = (
-        state.get("structure", 0) +
-        state.get("git", 0) +
-        state.get("architecture", 0) +
-        state.get("tests", 0) +
-        state.get("ci", 0) +
-        state.get("docs", 0)
-    ) / 6
-    
-    result = {
-        "repo": state["repo"]["name"],
+    scores = {
         "structure": state.get("structure", 0),
         "git": state.get("git", 0),
         "architecture": state.get("architecture", 0),
         "tests": state.get("tests", 0),
         "ci": state.get("ci", 0),
         "docs": state.get("docs", 0),
-        "score": round(repo_score, 2)
     }
+
+    repo_score = sum(scores.values()) / len(scores)
+
+    result = {
+        "repo":   state["repo"]["name"],
+        "score":  round(repo_score, 2),
+        **{k: round(v, 2) for k, v in scores.items()},
+    }
+
     return {"result": result, "repo_score": repo_score}
 
 
