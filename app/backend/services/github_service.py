@@ -54,7 +54,7 @@ def analyze_structure(path):
     for root, dirs, files in os.walk(path):
         file_count += len(files)
 
-    score = min(file_count / 50, 10)
+    score = min(file_count / 5, 10.0)
 
     return round(score, 2)
 
