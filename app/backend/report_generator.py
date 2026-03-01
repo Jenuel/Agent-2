@@ -28,7 +28,7 @@ def evaluate_readme(readme):
 
     return 5.0  
 
-REPORT_DIR = "reports"
+REPORT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "reports")
 
 def save_report(username, result):
 
