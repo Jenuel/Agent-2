@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+httpx
+GitPython
+google-generativeai
+python-dotenv
+reportlab
+langgraph
