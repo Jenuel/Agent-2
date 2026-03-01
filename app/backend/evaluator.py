@@ -98,8 +98,6 @@ Should this candidate be hired? Provide a concise recommendation (2–3 sentence
 
 
 
-
-
 workflow = StateGraph(RepoState)
 
 workflow.add_node("clone", clone_and_structure_node)
@@ -124,36 +122,25 @@ workflow.add_edge("recommend", END)
 
 repo_eval_app = workflow.compile()
 
-async def evaluate_repos(username, repos):
+async def evaluate_repos(username: str, repos: list) -> dict:
     results = []
     scores = []
 
     for repo in repos:
-        initial_state = {"username": username, "repo": repo}
-        
-        # LangGraph runs individual sync agent nodes in its thread executors automatically!
+        initial_state: RepoState = {"username": username, "repo": repo}
+
+        # LangGraph runs sync agent nodes in its thread executor automatically
         final_state = await repo_eval_app.ainvoke(initial_state)
 
         scores.append(final_state["repo_score"])
-        results.append(final_state["result"])
+        results.append({
+            **final_state["result"],
+            "recommendation": final_state.get("recommendation", ""),
+        })
 
-    overall = sum(scores) / len(scores) if scores else 0
+    overall = sum(scores) / len(scores) if scores else 0.0
 
     return {
         "overall_score": round(overall, 2),
-        "repos": results
+        "repos": results,
     }
-def generate_recommendation(result):
-
-    prompt = f"""
-        Candidate scores:
-
-        {result}
-
-        Should this candidate be hired?
-        Respond with recommendation and reasoning.
-    """
-
-    response = model.generate_content(prompt)
-
-    return response.text
