@@ -24,9 +24,12 @@ def evaluate_readme(readme: str) -> float:
     """
 
     try:
-        response = client.models.generate_content(
-            model=os.getenv("GEMINI_MODEL_ID"),
-            contents=prompt
+        response = call_with_retry_sync(
+            lambda: client.models.generate_content(
+                model=os.getenv("GEMINI_MODEL_ID"),
+                contents=prompt,
+            ),
+            label="evaluate_readme",
         )
         score_text = response.text.strip()
     except Exception as e:
