@@ -1,6 +1,7 @@
 import os
 from google import genai
 from google.genai import types
+from app.retry import call_with_retry_sync
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +33,10 @@ class Agent:
 
     def run(self, message: str) -> str:
         logger.debug("Agent '%s' sending message: %s", self.name, message[:120])
-        response = self.chat.send_message(message)
+        response = call_with_retry_sync(
+            lambda: self.chat.send_message(message),
+            label=f"agent/{self.name}",
+        )
         text = response.text
         logger.debug("Agent '%s' raw response: %s", self.name, text[:120])
         return text

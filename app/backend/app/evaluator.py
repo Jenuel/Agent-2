@@ -4,6 +4,7 @@ from app.agents.git_agent import analyze_git
 from app.agents.architecture_agent import detect_architecture
 from app.agents.test_agent import detect_tests
 from app.report_generator import evaluate_readme, client
+from app.retry import call_with_retry_async
 from app.logger import get_logger
 
 from typing import TypedDict, Dict, Any

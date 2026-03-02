@@ -2,6 +2,7 @@ from google import genai
 import json
 import os
 import re
+from app.retry import call_with_retry_sync
 from app.logger import get_logger
 
 logger = get_logger(__name__)
