@@ -2,7 +2,7 @@ fastapi
 uvicorn
 httpx
 GitPython
-google-generativeai
+google-genai
 python-dotenv
 reportlab
 langgraph

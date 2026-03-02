@@ -1,11 +1,12 @@
 import os
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from backend.logger import get_logger
 
 logger = get_logger(__name__)
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
+GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL_ID=os.getenv("GEMINI_MODEL_ID")
 
 class Agent:
     def __init__(self, name: str, instructions: str, tools: list = None):
@@ -15,13 +16,18 @@ class Agent:
             name,
             [t.__name__ for t in (tools or [])],
         )
-        self.model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+        self.client = genai.Client(api_key=GEMINI_API_KEY)
+        self.model_id = GEMINI_MODEL_ID
+        self.config = types.GenerateContentConfig(
             system_instruction=instructions,
             tools=tools or [],
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                disable=not bool(tools)
+            )
         )
-        self.chat = self.model.start_chat(
-            enable_automatic_function_calling=bool(tools)
+        self.chat = self.client.chats.create(
+            model=self.model_id,
+            config=self.config
         )
 
     def run(self, message: str) -> str:

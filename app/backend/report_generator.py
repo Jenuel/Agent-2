@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 import json
 import os
 import re
@@ -6,9 +6,7 @@ from backend.logger import get_logger
 
 logger = get_logger(__name__)
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 def evaluate_readme(readme: str) -> float:
@@ -25,8 +23,16 @@ def evaluate_readme(readme: str) -> float:
     {readme[:3000]}
     """
 
-    response = model.generate_content(prompt)
-    score_text = response.text.strip()
+    try:
+        response = client.models.generate_content(
+            model=os.getenv("GEMINI_MODEL_ID"),
+            contents=prompt
+        )
+        score_text = response.text.strip()
+    except Exception as e:
+        logger.error("Error during LLM generation: %s", e)
+        return 5.0
+
     logger.debug("evaluate_readme: LLM raw response: %r", score_text)
 
     match = re.search(r'\d+(\.\d+)?', score_text)

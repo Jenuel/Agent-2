@@ -1,9 +1,10 @@
+import os
 from backend.services.github_service import clone_repo, analyze_structure, read_readme
 from backend.agents.git_agent import analyze_git
 from backend.agents.architecture_agent import detect_architecture
 from backend.agents.test_agent import detect_tests
 from backend.agents.devops_agent import detect_ci
-from backend.report_generator import evaluate_readme, model
+from backend.report_generator import evaluate_readme, client
 from backend.logger import get_logger
 
 from typing import TypedDict, Dict, Any
@@ -139,7 +140,10 @@ Repository: {repo_name}
 Should this candidate be hired? Provide a concise recommendation (2–3 sentences) with clear reasoning.
 """
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model=os.getenv("GEMINI_MODEL_ID"),
+        contents=prompt,
+    )
     recommendation = response.text.strip()
     logger.info("[recommend] Recommendation generated for repo: %s", repo_name)
     logger.debug("[recommend] Text: %s", recommendation[:200])
