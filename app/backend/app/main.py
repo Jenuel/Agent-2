@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException
-from backend.services.github_service import get_user_repos
-from backend.evaluator import evaluate_repos
-from backend.report_generator import save_report
-from backend.logger import get_logger
+from app.services.github_service import get_user_repos
+from app.evaluator import evaluate_repos
+from app.report_generator import save_report
+from app.logger import get_logger
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = get_logger(__name__)
 

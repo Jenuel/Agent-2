@@ -1,6 +1,6 @@
 import os
 from .base_agent import Agent
-from backend.logger import get_logger
+from app.logger import get_logger
 
 logger = get_logger(__name__)
 

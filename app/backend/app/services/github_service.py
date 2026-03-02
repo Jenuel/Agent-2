@@ -1,7 +1,7 @@
 import os
 import httpx
 from git import Repo
-from backend.logger import get_logger
+from app.logger import get_logger
 
 logger = get_logger(__name__)
 
