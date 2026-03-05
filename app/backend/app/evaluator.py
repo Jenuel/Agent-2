@@ -3,9 +3,10 @@ from app.services.github_service import clone_repo, analyze_structure, read_read
 from app.agents.git_agent import analyze_git
 from app.agents.architecture_agent import detect_architecture
 from app.agents.test_agent import detect_tests
-from app.report_generator import evaluate_readme, client
+from app.report_generator import evaluate_readme
 from app.retry import call_with_retry_async
 from app.logger import get_logger
+from app.llm.factory import llm_provider
 
 from typing import TypedDict, Dict, Any
 from langgraph.graph import StateGraph, START, END
@@ -113,14 +114,12 @@ Repository: {repo_name}
 Should this candidate be hired? Provide a concise recommendation (2–3 sentences) with clear reasoning.
 """
 
-    response = await call_with_retry_async(
-        lambda: client.models.generate_content(
-            model=os.getenv("GEMINI_MODEL_ID"),
-            contents=prompt,
-        ),
-        label=f"recommend/{repo_name}",
-    )
-    recommendation = response.text.strip()
+    try:
+        recommendation = await llm_provider.generate_response_async(prompt=prompt)
+        recommendation = recommendation.strip()
+    except Exception as e:
+        logger.error("[recommend] LLM recommendation failed: %s", e)
+        recommendation = "Could not generate recommendation."
     logger.info("[recommend] Recommendation generated for repo: %s", repo_name)
     logger.debug("[recommend] Text: %s", recommendation[:200])
 
