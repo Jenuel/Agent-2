@@ -5,7 +5,7 @@ A powerful, automated tool that evaluates GitHub repositories using a multi-agen
 ## 🛠️ Tech Stack
 
 - **Backend**: Python 3.x, FastAPI
-- **AI/LLM**: Google Gemini (via `google-genai`)
+- **AI/LLM**: Google Gemini and OpenAI (swappable via abstraction layer)
 - **Workflow**: LangGraph (Decision nodes and agent coordination)
 - **Git Analysis**: GitPython
 - **Data Persistence**: JSON Reports
@@ -69,8 +69,16 @@ A powerful, automated tool that evaluates GitHub repositories using a multi-agen
 4. **Configure Environment Variables**:
    Create a `.env` file in `app/backend/`:
    ```env
+   # Choose your provider: 'gemini' or 'openai' (default: gemini)
+   LLM_PROVIDER=gemini
+   
+   # For Gemini:
    GEMINI_API_KEY=your_gemini_api_key_here
-   GEMINI_MODEL_ID=models/gemini-1.5-flash
+   GEMINI_MODEL_ID=gemini-2.5-flash
+   
+   # For OpenAI:
+   OPENAI_API_KEY=your_openai_api_key_here
+   OPENAI_MODEL_ID=gpt-4o-mini
    ```
 
 ### Running the API
@@ -82,6 +90,14 @@ uvicorn app.main:app --port 8000 --reload
 The API will be available at `http://localhost:8000`.
 
 ## 📡 API Endpoints
+
+### `GET /`
+Health-check endpoint to verify if the API is running.
+
+**Example Curl:**
+```bash
+curl -X GET "http://localhost:8000/"
+```
 
 ### `POST /evaluate`
 Evaluates a user's GitHub repositories.
@@ -112,12 +128,10 @@ The system uses a directed graph to process repository evaluations:
 
 ## ⚠️ Known Limitations
 
-> **Note**: This project currently utilizes the Gemini free tier. Due to request-per-minute (RPM) and daily quota constraints, evaluations on large repositories with many files may occasionally be incomplete or face `429` errors. OpenAI integration is planned to provide more robust, high-throughput analysis.
+> **Note**: When utilizing the Gemini free tier, due to request-per-minute (RPM) and daily quota constraints, evaluations on large repositories with many files may occasionally be incomplete or face `429` errors. Switching the `LLM_PROVIDER` to `openai` is recommended for more robust, high-throughput analysis.
 
 ## 🛠️ Future Improvements
 
-- [ ] **AI Model Provider Switching**: Implement an abstraction layer to allow switching between Google Gemini, OpenAI (GPT-4), Anthropic (Claude), and local models via Ollama.
-- [ ] **Enterprise-Grade AI Scaling**: Migration from the current rate-limited evaluation tier to higher-throughput production models (e.g., Gemini Ultra or GPT-4o) to support high-frequency enterprise requests.
 - [ ] **Code Cleaning**: 
   - Refactor agents into a more modular plugin system. 
   - Improve error handling for edge cases (e.g., massive repos, non-standard project structures).
