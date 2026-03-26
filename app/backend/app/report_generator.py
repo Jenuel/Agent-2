@@ -1,13 +1,11 @@
-from google import genai
 import json
 import os
 import re
 from app.retry import call_with_retry_sync
 from app.logger import get_logger
+from app.llm.factory import llm_provider
 
 logger = get_logger(__name__)
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 def evaluate_readme(readme: str) -> float:
@@ -25,14 +23,8 @@ def evaluate_readme(readme: str) -> float:
     """
 
     try:
-        response = call_with_retry_sync(
-            lambda: client.models.generate_content(
-                model=os.getenv("GEMINI_MODEL_ID"),
-                contents=prompt,
-            ),
-            label="evaluate_readme",
-        )
-        score_text = response.text.strip()
+        score_text = llm_provider.generate_response_sync(prompt=prompt)
+        score_text = score_text.strip()
     except Exception as e:
         logger.error("Error during LLM generation: %s", e)
         return 5.0
